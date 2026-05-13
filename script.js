@@ -4,6 +4,10 @@ const eventDateInput = document.querySelector("#event-date");
 const eventLocationInput = document.querySelector("#event-location");
 const fightSectionInput = document.querySelector("#fight-section");
 const boutTypeInput = document.querySelector("#bout-type");
+const divisionControls = document.querySelector("#division-controls");
+const divisionModeInput = document.querySelector("#division-mode");
+const customDivisionWrap = document.querySelector("#custom-division-wrap");
+const customDivisionInput = document.querySelector("#custom-division");
 const fighterAInput = document.querySelector("#fighter-a");
 const fighterBInput = document.querySelector("#fighter-b");
 const weightPreview = document.querySelector("#weight-preview");
@@ -78,15 +82,28 @@ function getWeightClass(a, b) {
 }
 
 function getBoutLabel(type, weightClass) {
-  if (type === "title") return `${weightClass} Championship`;
-  if (type === "interim") return `Interim ${weightClass} Championship`;
-  return `${weightClass} Bout`;
+  const division = String(weightClass || "Catchweight").toUpperCase();
+  if (type === "title") return `${division} CHAMPIONSHIP`;
+  if (type === "interim") return `INTERIM ${division} CHAMPIONSHIP`;
+  return `${division} BOUT`;
+}
+
+function getSelectedDivision(a, b) {
+  if (!a || !b) return "Catchweight";
+  if (a.weightClass === b.weightClass) return a.weightClass;
+  if (divisionModeInput.value === "fighterA") return a.weightClass;
+  if (divisionModeInput.value === "fighterB") return b.weightClass;
+  if (divisionModeInput.value === "custom") return customDivisionInput.value.trim() || "Catchweight";
+  return "Catchweight";
 }
 
 function updateWeightPreview() {
   const a = getFighter(fighterAInput.value);
   const b = getFighter(fighterBInput.value);
-  const weightClass = getWeightClass(a, b);
+  const mismatch = Boolean(a && b && a.weightClass !== b.weightClass);
+  divisionControls.hidden = !mismatch;
+  customDivisionWrap.hidden = divisionModeInput.value !== "custom";
+  const weightClass = getSelectedDivision(a, b);
   weightPreview.textContent = a && b
     ? `${weightClass}. ${getBoutLabel(boutTypeInput.value, weightClass)}.`
     : "Select two fighters to auto-detect the weight class.";
@@ -196,6 +213,10 @@ function drawCenteredText(text, x, y, maxWidth, size, color = "#fff", family = "
   ctx.textAlign = "left";
 }
 
+function drawCondensedText(text, x, y, maxWidth, size, color = "#fff", align = "center") {
+  drawCenteredText(text, x, y, maxWidth, size, color, "Impact, 'Arial Narrow', 'Arial Black', sans-serif");
+}
+
 function getInitials(name) {
   return name.split(/\s+/).map((part) => part[0]).join("").slice(0, 3).toUpperCase();
 }
@@ -290,10 +311,9 @@ async function drawFighterHeadshot(fighter, x, y, width, height, accent = "#f4d3
 }
 
 function sectionMeta(section) {
-  if (section === "mainEvent" || section === "coMain") return { time: "MAIN CARD", platform: "PPV" };
-  if (section === "prelims") return { time: "PRELIMS 7PM ET", platform: "STREAMING" };
-  if (section === "earlyPrelims") return { time: "EARLY PRELIMS 5:30PM ET", platform: "FIGHT PASS" };
-  return { time: "MAIN CARD", platform: "PPV" };
+  if (section === "prelims") return { time: "PRELIMS", platform: "" };
+  if (section === "earlyPrelims") return { time: "EARLY PRELIMS", platform: "" };
+  return { time: "MAIN CARD", platform: "" };
 }
 
 function drawLogo(eventNumber) {
@@ -314,8 +334,8 @@ async function drawFightPair(fight, x, y, width, headHeight, nameSize = 26, bout
   await drawFighterHeadshot(fight.a, x, y, headW, headHeight);
   await drawFighterHeadshot(fight.b, x + headW + gap, y, headW, headHeight);
   const names = `${lastName(fight.a.name)} vs ${lastName(fight.b.name)}`.toUpperCase();
-  drawCenteredText(names, x + width / 2, y + headHeight + nameSize + 5, width + 12, nameSize, "#fff");
-  drawCenteredText(getBoutLabel(fight.type, fight.weightClass).toUpperCase(), x + width / 2, y + headHeight + nameSize + boutSize + 11, width + 16, boutSize, "#f4d33f", "Arial Narrow, Arial, sans-serif");
+  drawCondensedText(names, x + width / 2, y + headHeight + nameSize + 3, width + 12, nameSize, "#fff");
+  drawCenteredText(getBoutLabel(fight.type, fight.weightClass).toUpperCase(), x + width / 2, y + headHeight + nameSize + boutSize + 8, width + 16, boutSize, "#f4d33f", "Arial Narrow, Arial, sans-serif");
 }
 
 async function drawSmallFight(fight, x, y, width) {
@@ -324,7 +344,7 @@ async function drawSmallFight(fight, x, y, width) {
   await drawFighterHeadshot(fight.a, x, y, headW, 78);
   await drawFighterHeadshot(fight.b, x + headW + gap, y, headW, 78);
   const names = `${lastName(fight.a.name)} vs ${lastName(fight.b.name)}`.toUpperCase();
-  drawCenteredText(names, x + width / 2, y + 101, width + 10, 18, "#fff");
+  drawCondensedText(names, x + width / 2, y + 101, width + 10, 18, "#fff");
   drawCenteredText(fight.weightClass.toUpperCase(), x + width / 2, y + 118, width, 10, "#f4d33f", "Arial Narrow, Arial, sans-serif");
 }
 
@@ -334,7 +354,7 @@ function drawSectionBar(text, y, platform = "") {
   ctx.strokeStyle = "#f5f5f0";
   ctx.lineWidth = 2;
   ctx.strokeRect(28, y, canvas.width - 56, 42);
-  drawCenteredText(`${text}${platform ? `  ${platform}` : ""}`, canvas.width / 2, y + 30, canvas.width - 90, 25, "#fff");
+  drawCondensedText(`${text}${platform ? `  ${platform}` : ""}`, canvas.width / 2, y + 30, canvas.width - 90, 26, "#fff");
 }
 
 async function renderPoster() {
@@ -347,7 +367,6 @@ async function renderPoster() {
 
   ctx.fillStyle = "#080810";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  drawGrid();
 
   const bg = ctx.createRadialGradient(450, 470, 20, 450, 470, 760);
   bg.addColorStop(0, "rgba(28,33,255,0.96)");
@@ -356,46 +375,47 @@ async function renderPoster() {
   bg.addColorStop(1, "rgba(8,8,16,1)");
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
+  drawGrid();
 
-  ctx.fillStyle = "rgba(255,255,255,0.08)";
-  ctx.beginPath();
-  ctx.moveTo(0, 0);
-  ctx.lineTo(170, 0);
-  ctx.lineTo(0, 320);
-  ctx.closePath();
-  ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(canvas.width, 230);
-  ctx.lineTo(canvas.width, 760);
-  ctx.lineTo(680, 760);
-  ctx.closePath();
-  ctx.fill();
-  ctx.fillStyle = "rgba(230,0,30,0.42)";
+  ctx.fillStyle = "rgba(255,255,255,0.075)";
   ctx.beginPath();
   ctx.moveTo(0, 0);
   ctx.lineTo(185, 0);
-  ctx.lineTo(0, 350);
+  ctx.lineTo(0, 336);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(canvas.width, 185);
+  ctx.lineTo(canvas.width, 760);
+  ctx.lineTo(682, 760);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "rgba(225,0,36,0.36)";
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(165, 0);
+  ctx.lineTo(0, 300);
   ctx.closePath();
   ctx.fill();
   ctx.beginPath();
   ctx.moveTo(canvas.width, 160);
-  ctx.lineTo(canvas.width, 780);
-  ctx.lineTo(680, 780);
+  ctx.lineTo(canvas.width, 800);
+  ctx.lineTo(690, 800);
   ctx.closePath();
   ctx.fill();
 
   drawLogo(eventNumberInput.value.trim());
-  ctx.font = "700 34px Georgia, serif";
+  ctx.font = "900 24px Arial, sans-serif";
   ctx.textAlign = "center";
   ctx.fillStyle = "#f5f5f0";
-  ctx.fillText("Paramount+", 450, 166);
-  drawCenteredText("MAIN CARD", 450, 200, 270, 26, "#fff");
-  drawCenteredText(eventLocationInput.value.trim().toUpperCase() || "LOCATION TBA", 450, 224, 360, 16, "#f5f5f0", "Arial Narrow, Arial, sans-serif");
+  ctx.fillText("jakublabs.xyz", 450, 158);
+  drawCondensedText("MAIN CARD", 450, 195, 250, 26, "#fff");
+  drawCenteredText(eventLocationInput.value.trim().toUpperCase() || "LOCATION TBA", 450, 219, 360, 15, "#f5f5f0", "Arial Narrow, Arial, sans-serif");
 
-  if (mainEvent) await drawFightPair(mainEvent, 30, 36, 280, 118, 26, 10);
-  if (coMain) await drawFightPair(coMain, 590, 36, 280, 118, 26, 10);
+  if (mainEvent) await drawFightPair(mainEvent, 30, 36, 286, 112, 25, 10);
+  if (coMain) await drawFightPair(coMain, 584, 36, 286, 112, 25, 10);
 
-  let y = 255;
+  let y = 250;
   const mainGrid = mainCard.slice(0, 3);
   if (mainGrid.length) {
     const cardW = 244;
@@ -430,7 +450,7 @@ async function renderPoster() {
   ctx.fillRect(28, canvas.height - 90, canvas.width - 56, 58);
   ctx.strokeStyle = "#f4d33f";
   ctx.strokeRect(28, canvas.height - 90, canvas.width - 56, 58);
-  drawCenteredText(eventDateInput.value.trim().toUpperCase() || "DATE TBA", canvas.width / 2, canvas.height - 48, canvas.width - 80, 48, "#f4d33f");
+  drawCondensedText(eventDateInput.value.trim().toUpperCase() || "DATE TBA", canvas.width / 2, canvas.height - 48, canvas.width - 80, 50, "#f4d33f");
 
   ctx.fillStyle = "rgba(255,255,255,0.72)";
   ctx.font = "900 14px Arial, sans-serif";
@@ -453,7 +473,7 @@ function addFight() {
     return;
   }
 
-  const weightClass = getWeightClass(a, b);
+  const weightClass = getSelectedDivision(a, b);
   const section = fightSectionInput.value;
   const type = boutTypeInput.value;
 
@@ -479,7 +499,7 @@ async function loadFighters() {
   renderFighterOptions();
 }
 
-[fighterAInput, fighterBInput, boutTypeInput].forEach((input) => {
+[fighterAInput, fighterBInput, boutTypeInput, divisionModeInput, customDivisionInput].forEach((input) => {
   input.addEventListener("input", updateWeightPreview);
   input.addEventListener("change", updateWeightPreview);
 });
