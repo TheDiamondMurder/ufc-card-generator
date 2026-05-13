@@ -362,6 +362,10 @@ async function drawFightPair(fight, x, y, width, headHeight, nameSize = 26, bout
 }
 
 async function drawSmallFight(fight, x, y, width, headHeight = 78, nameSize = 18) {
+  if (!fight) {
+    drawEmptySlot(x, y, width, headHeight, nameSize);
+    return;
+  }
   const gap = 6;
   const headW = (width - gap) / 2;
   await drawFighterHeadshot(fight.a, x, y, headW, headHeight);
@@ -369,6 +373,49 @@ async function drawSmallFight(fight, x, y, width, headHeight = 78, nameSize = 18
   const names = `${lastName(fight.a.name)} vs ${lastName(fight.b.name)}`.toUpperCase();
   drawCondensedText(names, x + width / 2, y + headHeight + nameSize + 3, width + 10, nameSize, "#fff");
   drawCenteredText(fight.weightClass.toUpperCase(), x + width / 2, y + headHeight + nameSize + 18, width, 9, "#f4d33f", "Arial Narrow, Arial, sans-serif");
+}
+
+function drawEmptySlot(x, y, width, headHeight = 78, nameSize = 18) {
+  const gap = 6;
+  const headW = (width - gap) / 2;
+  ctx.save();
+  [x, x + headW + gap].forEach((boxX) => {
+    const grad = ctx.createLinearGradient(boxX, y, boxX + headW, y + headHeight);
+    grad.addColorStop(0, "rgba(255,255,255,0.07)");
+    grad.addColorStop(1, "rgba(0,0,0,0.18)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(boxX, y, headW, headHeight);
+    ctx.strokeStyle = "rgba(244,211,63,0.34)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(boxX, y, headW, headHeight);
+  });
+  ctx.globalAlpha = 0.42;
+  drawCondensedText("TBA vs TBA", x + width / 2, y + headHeight + nameSize + 3, width, nameSize, "#fff");
+  drawCenteredText("BOUT TBA", x + width / 2, y + headHeight + nameSize + 18, width, 9, "#f4d33f", "Arial Narrow, Arial, sans-serif");
+  ctx.restore();
+}
+
+function drawSponsorBlock(x, y, width, height) {
+  ctx.save();
+  ctx.fillStyle = "rgba(0,0,0,0.18)";
+  ctx.fillRect(x, y, width, height);
+  ctx.strokeStyle = "rgba(255,255,255,0.14)";
+  ctx.strokeRect(x, y, width, height);
+  ctx.fillStyle = "#f5f5f0";
+  ctx.font = "900 10px Arial, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("PRESENTED BY", x + width / 2, y + 18);
+  ctx.strokeStyle = "#f5f5f0";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(x + width * 0.36, y + height * 0.55, 34, 0, Math.PI * 2);
+  ctx.stroke();
+  drawCondensedText("JAKUB", x + width * 0.36, y + height * 0.58, 62, 18, "#f5f5f0");
+  drawCondensedText("2 shots", x + width * 0.7, y + height * 0.52, 90, 23, "#ff3f51");
+  ctx.font = "900 10px Arial, sans-serif";
+  ctx.fillStyle = "#f5f5f0";
+  ctx.fillText("IN EVERY CAN", x + width * 0.7, y + height * 0.66);
+  ctx.restore();
 }
 
 function drawSectionBar(text, y, platform = "") {
@@ -435,44 +482,38 @@ async function renderPoster() {
 
   let y = 246;
   const mainGrid = mainCard.slice(0, 3);
-  if (mainGrid.length) {
-    const cardW = 242;
-    for (let index = 0; index < mainGrid.length; index += 1) {
-      await drawSmallFight(mainGrid[index], 72 + index * 274, y, cardW, 76, 17);
-    }
-    y += 128;
+  const mainCardW = 190;
+  for (let index = 0; index < 3; index += 1) {
+    await drawSmallFight(mainGrid[index], 32 + index * 198, y, mainCardW, 76, 16);
   }
+  drawSponsorBlock(650, y - 4, 212, 116);
+  y += 132;
 
-  if (prelims.length) {
-    const meta = sectionMeta("prelims");
-    drawSectionBar(meta.time, y, meta.platform);
-    y += 52;
-    const cardW = 192;
-    for (let index = 0; index < Math.min(prelims.length, 4); index += 1) {
-      await drawSmallFight(prelims[index], 34 + index * 216, y, cardW, 88, 16);
-    }
-    y += 144;
+  const prelimMeta = sectionMeta("prelims");
+  drawSectionBar(prelimMeta.time, y, prelimMeta.platform);
+  y += 52;
+  const cardW = 192;
+  for (let index = 0; index < 4; index += 1) {
+    await drawSmallFight(prelims[index], 34 + index * 216, y, cardW, 88, 16);
   }
+  y += 144;
 
-  if (earlyPrelims.length) {
-    const meta = sectionMeta("earlyPrelims");
-    drawSectionBar(meta.time, y, meta.platform);
-    y += 52;
-    const cardW = 192;
-    for (let index = 0; index < Math.min(earlyPrelims.length, 4); index += 1) {
-      await drawSmallFight(earlyPrelims[index], 34 + index * 216, y, cardW, 88, 16);
-    }
+  const earlyMeta = sectionMeta("earlyPrelims");
+  drawSectionBar(earlyMeta.time, y, earlyMeta.platform);
+  y += 52;
+  for (let index = 0; index < 4; index += 1) {
+    await drawSmallFight(earlyPrelims[index], 34 + index * 216, y, cardW, 88, 16);
   }
 
   ctx.fillStyle = "#050505";
-  ctx.fillRect(28, canvas.height - 78, canvas.width - 56, 58);
+  ctx.fillRect(28, 920, canvas.width - 56, 58);
   ctx.strokeStyle = "#f4d33f";
-  ctx.strokeRect(28, canvas.height - 78, canvas.width - 56, 58);
-  drawCondensedText(eventDateInput.value.trim().toUpperCase() || "DATE TBA", canvas.width / 2, canvas.height - 36, canvas.width - 80, 50, "#f4d33f");
+  ctx.strokeRect(28, 920, canvas.width - 56, 58);
+  drawCondensedText(eventDateInput.value.trim().toUpperCase() || "DATE TBA", canvas.width / 2, 962, canvas.width - 80, 50, "#f4d33f");
 
   ctx.fillStyle = "rgba(255,255,255,0.72)";
   ctx.font = "900 14px Arial, sans-serif";
-  ctx.fillText("jakublabs.xyz", 30, canvas.height - 12);
+  ctx.fillText("jakublabs.xyz", 30, 1000);
 
   updateDownload();
 }
