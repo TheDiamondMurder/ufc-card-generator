@@ -202,10 +202,14 @@ function getInitials(name) {
 
 function lastName(name) {
   const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+  const suffixes = new Set(["jr", "jr.", "sr", "sr.", "ii", "iii", "iv", "v"]);
+  while (parts.length > 1 && suffixes.has(parts[parts.length - 1].toLowerCase())) {
+    parts.pop();
+  }
   return parts[parts.length - 1] || name;
 }
 
-function drawFlag(country, x, y, width, height) {
+function drawFlagFallback(country, x, y, width, height) {
   const code = flagCodes[country] || country.slice(0, 2).toUpperCase();
   ctx.fillStyle = "#f5f5f0";
   ctx.fillRect(x, y, width, height);
@@ -218,6 +222,18 @@ function drawFlag(country, x, y, width, height) {
   ctx.fillText(code, x + width / 2, y + height / 2 + 1);
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
+}
+
+async function drawFlag(fighter, x, y, width, height) {
+  const image = await loadImage(fighter.flag);
+  if (!image) {
+    drawFlagFallback(fighter.country, x, y, width, height);
+    return;
+  }
+
+  ctx.drawImage(image, x, y, width, height);
+  ctx.strokeStyle = "rgba(0,0,0,0.35)";
+  ctx.strokeRect(x, y, width, height);
 }
 
 function loadImage(src) {
@@ -270,7 +286,7 @@ async function drawFighterHeadshot(fighter, x, y, width, height, accent = "#f4d3
   ctx.strokeStyle = accent;
   ctx.lineWidth = 3;
   ctx.strokeRect(x, y, width, height);
-  drawFlag(fighter.country, x + 4, y + height - 22, 34, 18);
+  await drawFlag(fighter, x + 4, y + height - 22, 34, 18);
 }
 
 function sectionMeta(section) {
@@ -282,38 +298,34 @@ function sectionMeta(section) {
 
 function drawLogo(eventNumber) {
   ctx.fillStyle = "#050505";
-  ctx.fillRect(325, 34, 250, 102);
+  ctx.fillRect(330, 22, 240, 102);
   ctx.fillStyle = "#f4d33f";
-  ctx.font = "900 50px Impact, Arial Black, sans-serif";
+  ctx.font = "900 48px Impact, Arial Black, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("UFC", 407, 100);
-  ctx.font = "900 30px Impact, Arial Black, sans-serif";
-  ctx.fillText(eventNumber || "000", 500, 100);
+  ctx.fillText("UFC", 410, 91);
+  ctx.font = "900 28px Impact, Arial Black, sans-serif";
+  ctx.fillText(eventNumber || "000", 500, 91);
   ctx.textAlign = "left";
 }
 
-async function drawFeaturedFight(fight, y, isMain) {
-  const boxW = isMain ? 142 : 92;
-  const boxH = isMain ? 142 : 98;
-  const leftX = isMain ? 36 : 70;
-  const rightX = isMain ? canvas.width - leftX - boxW : canvas.width - 70 - boxW;
-  await drawFighterHeadshot(fight.a, leftX, y, boxW, boxH);
-  await drawFighterHeadshot(fight.b, rightX, y, boxW, boxH);
-
-  const centerY = y + (isMain ? 116 : 84);
+async function drawFightPair(fight, x, y, width, headHeight, nameSize = 26, boutSize = 11) {
+  const gap = 6;
+  const headW = (width - gap) / 2;
+  await drawFighterHeadshot(fight.a, x, y, headW, headHeight);
+  await drawFighterHeadshot(fight.b, x + headW + gap, y, headW, headHeight);
   const names = `${lastName(fight.a.name)} vs ${lastName(fight.b.name)}`.toUpperCase();
-  drawCenteredText(names, canvas.width / 2, centerY, isMain ? 520 : 410, isMain ? 38 : 28, "#fff");
-  drawCenteredText(getBoutLabel(fight.type, fight.weightClass).toUpperCase(), canvas.width / 2, centerY + (isMain ? 30 : 22), 420, isMain ? 18 : 14, "#f4d33f", "Arial Narrow, Arial, sans-serif");
+  drawCenteredText(names, x + width / 2, y + headHeight + nameSize + 5, width + 12, nameSize, "#fff");
+  drawCenteredText(getBoutLabel(fight.type, fight.weightClass).toUpperCase(), x + width / 2, y + headHeight + nameSize + boutSize + 11, width + 16, boutSize, "#f4d33f", "Arial Narrow, Arial, sans-serif");
 }
 
 async function drawSmallFight(fight, x, y, width) {
   const gap = 6;
   const headW = (width - gap) / 2;
-  await drawFighterHeadshot(fight.a, x, y, headW, 86);
-  await drawFighterHeadshot(fight.b, x + headW + gap, y, headW, 86);
+  await drawFighterHeadshot(fight.a, x, y, headW, 78);
+  await drawFighterHeadshot(fight.b, x + headW + gap, y, headW, 78);
   const names = `${lastName(fight.a.name)} vs ${lastName(fight.b.name)}`.toUpperCase();
-  drawCenteredText(names, x + width / 2, y + 113, width, 19, "#fff");
-  drawCenteredText(fight.weightClass.toUpperCase(), x + width / 2, y + 132, width, 10, "#f4d33f", "Arial Narrow, Arial, sans-serif");
+  drawCenteredText(names, x + width / 2, y + 101, width + 10, 18, "#fff");
+  drawCenteredText(fight.weightClass.toUpperCase(), x + width / 2, y + 118, width, 10, "#f4d33f", "Arial Narrow, Arial, sans-serif");
 }
 
 function drawSectionBar(text, y, platform = "") {
@@ -337,10 +349,10 @@ async function renderPoster() {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   drawGrid();
 
-  const bg = ctx.createRadialGradient(450, 520, 20, 450, 520, 700);
-  bg.addColorStop(0, "rgba(25,18,255,0.88)");
-  bg.addColorStop(0.46, "rgba(24,15,170,0.86)");
-  bg.addColorStop(0.72, "rgba(167,5,60,0.58)");
+  const bg = ctx.createRadialGradient(450, 470, 20, 450, 470, 760);
+  bg.addColorStop(0, "rgba(28,33,255,0.96)");
+  bg.addColorStop(0.44, "rgba(23,18,188,0.94)");
+  bg.addColorStop(0.74, "rgba(126,5,88,0.76)");
   bg.addColorStop(1, "rgba(8,8,16,1)");
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -358,25 +370,39 @@ async function renderPoster() {
   ctx.lineTo(680, 760);
   ctx.closePath();
   ctx.fill();
+  ctx.fillStyle = "rgba(230,0,30,0.42)";
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(185, 0);
+  ctx.lineTo(0, 350);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(canvas.width, 160);
+  ctx.lineTo(canvas.width, 780);
+  ctx.lineTo(680, 780);
+  ctx.closePath();
+  ctx.fill();
 
   drawLogo(eventNumberInput.value.trim());
   ctx.font = "700 34px Georgia, serif";
   ctx.textAlign = "center";
   ctx.fillStyle = "#f5f5f0";
-  ctx.fillText("Paramount+", 450, 182);
-  drawCenteredText(eventLocationInput.value.trim().toUpperCase() || "LOCATION TBA", 450, 214, 400, 22, "#fff", "Arial Narrow, Arial, sans-serif");
+  ctx.fillText("Paramount+", 450, 166);
+  drawCenteredText("MAIN CARD", 450, 200, 270, 26, "#fff");
+  drawCenteredText(eventLocationInput.value.trim().toUpperCase() || "LOCATION TBA", 450, 224, 360, 16, "#f5f5f0", "Arial Narrow, Arial, sans-serif");
 
-  if (mainEvent) await drawFeaturedFight(mainEvent, 72, true);
-  if (coMain) await drawFeaturedFight(coMain, 260, false);
+  if (mainEvent) await drawFightPair(mainEvent, 30, 36, 280, 118, 26, 10);
+  if (coMain) await drawFightPair(coMain, 590, 36, 280, 118, 26, 10);
 
-  let y = coMain ? 405 : 305;
+  let y = 255;
   const mainGrid = mainCard.slice(0, 3);
   if (mainGrid.length) {
-    const cardW = 248;
+    const cardW = 244;
     for (let index = 0; index < mainGrid.length; index += 1) {
       await drawSmallFight(mainGrid[index], 70 + index * 276, y, cardW);
     }
-    y += 165;
+    y += 145;
   }
 
   if (prelims.length) {
@@ -387,7 +413,7 @@ async function renderPoster() {
     for (let index = 0; index < Math.min(prelims.length, 4); index += 1) {
       await drawSmallFight(prelims[index], 52 + index * 207, y, cardW);
     }
-    y += 165;
+    y += 145;
   }
 
   if (earlyPrelims.length) {
