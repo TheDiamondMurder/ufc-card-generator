@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UFC Card Builder | jakublabs.xyz</title>
+    <link rel="stylesheet" href="styles.css?v=1" />
+  </head>
+  <body>
+    <main class="app" aria-labelledby="page-title">
+      <section class="hero">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span>UFC Card Builder</span>
+        </div>
+        <h1 id="page-title">UFC Card Builder</h1>
+        <p class="lede">build a fantasy fight card, set the bout stakes, then render it as a poster</p>
+      </section>
+
+      <section class="workspace">
+        <form class="panel editor" id="card-form">
+          <div class="field-row">
+            <label>
+              <span>event number</span>
+              <input id="event-number" type="text" value="324" placeholder="324" maxlength="18" />
+            </label>
+            <label>
+              <span>date</span>
+              <input id="event-date" type="text" value="JAN 24 SAT" placeholder="JAN 24 SAT" maxlength="28" />
+            </label>
+          </div>
+
+          <label>
+            <span>venue / location</span>
+            <input id="event-location" type="text" value="Las Vegas, NV" placeholder="Las Vegas, NV" maxlength="60" />
+          </label>
+
+          <div class="panel-sub fight-adder">
+            <div class="section-title">
+              <p class="kicker">add fight</p>
+              <button class="button button-dark" id="clear-card" type="button">Clear</button>
+            </div>
+
+            <div class="field-row">
+              <label>
+                <span>section</span>
+                <select id="fight-section">
+                  <option value="mainEvent">Main Event</option>
+                  <option value="coMain">Co-Main</option>
+                  <option value="mainCard" selected>Main Card</option>
+                  <option value="prelims">Prelims</option>
+                  <option value="earlyPrelims">Early Prelims</option>
+                </select>
+              </label>
+              <label>
+                <span>bout type</span>
+                <select id="bout-type">
+                  <option value="normal">Normal Bout</option>
+                  <option value="interim">Interim Fight</option>
+                  <option value="title">Title Fight</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="field-row">
+              <label>
+                <span>fighter 1</span>
+                <input id="fighter-a" list="fighters-list" type="text" placeholder="search fighter" autocomplete="off" />
+              </label>
+              <label>
+                <span>fighter 2</span>
+                <input id="fighter-b" list="fighters-list" type="text" placeholder="search opponent" autocomplete="off" />
+              </label>
+            </div>
+
+            <p class="status" id="weight-preview">Select two fighters to auto-detect the weight class.</p>
+            <button class="button button-light" id="add-fight" type="button">Add Fight</button>
+          </div>
+
+          <datalist id="fighters-list"></datalist>
+
+          <div class="panel-sub">
+            <div class="section-title">
+              <p class="kicker">card</p>
+              <span class="fight-count" id="fight-count">0 fights</span>
+            </div>
+            <div class="fight-list" id="fight-list"></div>
+          </div>
+
+          <div class="actions">
+            <button class="button button-light" type="submit">Render Poster</button>
+            <a class="button button-dark" id="download" href="#" download="ufc-card.png">Download</a>
+          </div>
+        </form>
+
+        <section class="panel preview-panel">
+          <div class="preview-heading">
+            <div>
+              <p class="kicker">preview</p>
+              <h2>fight poster</h2>
+            </div>
+          </div>
+          <canvas id="poster-canvas" width="900" height="1200" aria-label="Generated UFC card poster"></canvas>
+        </section>
+      </section>
+    </main>
+
+    <script src="script.js?v=1"></script>
+  </body>
+</html>
