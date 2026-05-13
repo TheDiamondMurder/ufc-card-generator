@@ -178,20 +178,43 @@ function roundRect(x, y, width, height, radius) {
 }
 
 function drawGrid() {
-  ctx.strokeStyle = "rgba(255,255,255,0.055)";
+  ctx.strokeStyle = "rgba(255,255,255,0.035)";
   ctx.lineWidth = 1;
-  for (let x = 0; x <= canvas.width; x += 60) {
+  for (let x = 0; x <= canvas.width; x += 45) {
     ctx.beginPath();
     ctx.moveTo(x, 0);
     ctx.lineTo(x, canvas.height);
     ctx.stroke();
   }
-  for (let y = 0; y <= canvas.height; y += 60) {
+  for (let y = 0; y <= canvas.height; y += 45) {
     ctx.beginPath();
     ctx.moveTo(0, y);
     ctx.lineTo(canvas.width, y);
     ctx.stroke();
   }
+}
+
+function drawPosterTexture() {
+  ctx.save();
+  ctx.globalAlpha = 0.18;
+  for (let index = 0; index < 620; index += 1) {
+    const x = (index * 83) % canvas.width;
+    const y = (index * 149) % canvas.height;
+    const size = ((index * 17) % 3) + 0.8;
+    ctx.fillStyle = index % 5 === 0 ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.55)";
+    ctx.fillRect(x, y, size, size);
+  }
+  ctx.globalAlpha = 0.16;
+  ctx.strokeStyle = "rgba(255,255,255,0.18)";
+  for (let index = 0; index < 24; index += 1) {
+    const x = (index * 97) % canvas.width;
+    const y = (index * 211) % canvas.height;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + 40 + (index % 5) * 22, y - 16 + (index % 7) * 8);
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 
 function fitText(text, maxWidth, size, minSize, family = "Impact, Arial Black, sans-serif") {
@@ -365,64 +388,59 @@ async function renderPoster() {
   const prelims = ordered.filter((fight) => fight.section === "prelims");
   const earlyPrelims = ordered.filter((fight) => fight.section === "earlyPrelims");
 
-  ctx.fillStyle = "#080810";
+  ctx.fillStyle = "#071010";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  const bg = ctx.createRadialGradient(450, 470, 20, 450, 470, 760);
-  bg.addColorStop(0, "rgba(28,33,255,0.96)");
-  bg.addColorStop(0.44, "rgba(23,18,188,0.94)");
-  bg.addColorStop(0.74, "rgba(126,5,88,0.76)");
-  bg.addColorStop(1, "rgba(8,8,16,1)");
+  const bg = ctx.createRadialGradient(450, 310, 10, 450, 460, 780);
+  bg.addColorStop(0, "rgba(16,68,66,0.96)");
+  bg.addColorStop(0.46, "rgba(11,46,45,0.94)");
+  bg.addColorStop(0.78, "rgba(6,24,25,0.98)");
+  bg.addColorStop(1, "rgba(3,8,9,1)");
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   drawGrid();
+  drawPosterTexture();
 
-  ctx.fillStyle = "rgba(255,255,255,0.075)";
+  ctx.fillStyle = "rgba(255,255,255,0.055)";
   ctx.beginPath();
   ctx.moveTo(0, 0);
-  ctx.lineTo(185, 0);
-  ctx.lineTo(0, 336);
-  ctx.closePath();
-  ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(canvas.width, 185);
-  ctx.lineTo(canvas.width, 760);
-  ctx.lineTo(682, 760);
-  ctx.closePath();
-  ctx.fill();
-  ctx.fillStyle = "rgba(225,0,36,0.36)";
-  ctx.beginPath();
-  ctx.moveTo(0, 0);
-  ctx.lineTo(165, 0);
-  ctx.lineTo(0, 300);
+  ctx.lineTo(130, 0);
+  ctx.lineTo(0, 245);
   ctx.closePath();
   ctx.fill();
   ctx.beginPath();
   ctx.moveTo(canvas.width, 160);
-  ctx.lineTo(canvas.width, 800);
-  ctx.lineTo(690, 800);
+  ctx.lineTo(canvas.width, 710);
+  ctx.lineTo(715, 710);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "rgba(190,10,34,0.18)";
+  ctx.beginPath();
+  ctx.moveTo(0, canvas.height);
+  ctx.lineTo(canvas.width, canvas.height);
+  ctx.lineTo(canvas.width, canvas.height - 260);
+  ctx.lineTo(0, canvas.height - 150);
   ctx.closePath();
   ctx.fill();
 
   drawLogo(eventNumberInput.value.trim());
-  ctx.font = "900 24px Arial, sans-serif";
+  ctx.font = "900 25px Arial, sans-serif";
   ctx.textAlign = "center";
   ctx.fillStyle = "#f5f5f0";
-  ctx.fillText("jakublabs.xyz", 450, 158);
-  drawCondensedText("MAIN CARD", 450, 195, 250, 26, "#fff");
-  drawCenteredText(eventLocationInput.value.trim().toUpperCase() || "LOCATION TBA", 450, 219, 360, 15, "#f5f5f0", "Arial Narrow, Arial, sans-serif");
+  ctx.fillText("jakublabs.xyz", 450, 162);
+  drawCondensedText("MAIN CARD", 450, 204, 250, 29, "#fff");
 
   if (mainEvent) await drawFightPair(mainEvent, 30, 36, 286, 112, 25, 10);
   if (coMain) await drawFightPair(coMain, 584, 36, 286, 112, 25, 10);
 
-  let y = 250;
+  let y = 252;
   const mainGrid = mainCard.slice(0, 3);
   if (mainGrid.length) {
     const cardW = 244;
     for (let index = 0; index < mainGrid.length; index += 1) {
       await drawSmallFight(mainGrid[index], 70 + index * 276, y, cardW);
     }
-    y += 145;
+    y += 140;
   }
 
   if (prelims.length) {
@@ -433,7 +451,7 @@ async function renderPoster() {
     for (let index = 0; index < Math.min(prelims.length, 4); index += 1) {
       await drawSmallFight(prelims[index], 52 + index * 207, y, cardW);
     }
-    y += 145;
+    y += 140;
   }
 
   if (earlyPrelims.length) {
@@ -447,10 +465,10 @@ async function renderPoster() {
   }
 
   ctx.fillStyle = "#050505";
-  ctx.fillRect(28, canvas.height - 90, canvas.width - 56, 58);
+  ctx.fillRect(28, canvas.height - 82, canvas.width - 56, 58);
   ctx.strokeStyle = "#f4d33f";
-  ctx.strokeRect(28, canvas.height - 90, canvas.width - 56, 58);
-  drawCondensedText(eventDateInput.value.trim().toUpperCase() || "DATE TBA", canvas.width / 2, canvas.height - 48, canvas.width - 80, 50, "#f4d33f");
+  ctx.strokeRect(28, canvas.height - 82, canvas.width - 56, 58);
+  drawCondensedText(eventDateInput.value.trim().toUpperCase() || "DATE TBA", canvas.width / 2, canvas.height - 40, canvas.width - 80, 50, "#f4d33f");
 
   ctx.fillStyle = "rgba(255,255,255,0.72)";
   ctx.font = "900 14px Arial, sans-serif";
