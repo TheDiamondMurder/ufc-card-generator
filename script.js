@@ -399,16 +399,27 @@ function sectionMeta(section) {
   return { time: "MAIN CARD", platform: "" };
 }
 
-function drawLogo(eventNumber) {
+async function drawLogo(eventNumber) {
   ctx.fillStyle = "#050505";
   ctx.fillRect(338, 0, 224, 118);
-  ctx.fillStyle = "#f4d33f";
-  ctx.font = "italic 900 48px Impact, Arial Black, sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText("UFC", 421, 76);
+
+  const logo = await loadImage("assets/ufc-logo.svg?v=1");
+  if (logo) {
+    const targetW = 82;
+    const targetH = targetW * (logo.height / logo.width);
+    ctx.drawImage(logo, 381, 43 - targetH / 2 + 18, targetW, targetH);
+  } else {
+    ctx.fillStyle = "#f5f5f0";
+    ctx.font = "italic 900 48px Impact, Arial Black, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("UFC", 421, 76);
+  }
+
+  ctx.fillStyle = "#f5f5f0";
   ctx.font = "italic 900 28px Impact, Arial Black, sans-serif";
+  ctx.textAlign = "center";
   ctx.fillText(eventNumber || "000", 482, 76);
-  ctx.strokeStyle = "#f4d33f";
+  ctx.strokeStyle = "#f5f5f0";
   ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.moveTo(462, 86);
@@ -514,7 +525,7 @@ async function renderPoster() {
   ctx.closePath();
   ctx.fill();
 
-  drawLogo(eventNumberInput.value.trim());
+  await drawLogo(eventNumberInput.value.trim());
   ctx.font = "900 25px Arial, sans-serif";
   ctx.textAlign = "center";
   ctx.fillStyle = "#f5f5f0";
