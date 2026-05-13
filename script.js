@@ -83,7 +83,7 @@ function getWeightClass(a, b) {
 
 function getBoutLabel(type, weightClass) {
   const division = String(weightClass || "Catchweight").toUpperCase();
-  if (type === "title") return `${division} CHAMPIONSHIP`;
+  if (type === "title") return `WORLD ${division} CHAMPIONSHIP`;
   if (type === "interim") return `INTERIM ${division} CHAMPIONSHIP`;
   return `${division} BOUT`;
 }
@@ -240,6 +240,55 @@ function drawCondensedText(text, x, y, maxWidth, size, color = "#fff", align = "
   drawCenteredText(text, x, y, maxWidth, size, color, "Impact, 'Arial Narrow', 'Arial Black', sans-serif");
 }
 
+function drawFightTitle(fight, x, y, maxWidth, size) {
+  const left = lastName(fight.a.name).toUpperCase();
+  const right = lastName(fight.b.name).toUpperCase();
+  let current = size;
+  let metrics;
+
+  while (current >= 10) {
+    ctx.font = `900 ${current}px Impact, 'Arial Narrow', 'Arial Black', sans-serif`;
+    const leftWidth = ctx.measureText(left).width;
+    const rightWidth = ctx.measureText(right).width;
+    ctx.font = `900 ${Math.max(8, current * 0.58)}px Impact, 'Arial Narrow', 'Arial Black', sans-serif`;
+    const vsWidth = ctx.measureText("VS").width;
+    const total = leftWidth + rightWidth + vsWidth + current * 0.34;
+    if (total <= maxWidth) {
+      metrics = { leftWidth, rightWidth, vsWidth, total, vsSize: Math.max(8, current * 0.58) };
+      break;
+    }
+    current -= 1;
+  }
+
+  if (!metrics) {
+    ctx.font = `900 ${current}px Impact, 'Arial Narrow', 'Arial Black', sans-serif`;
+    metrics = { leftWidth: ctx.measureText(left).width, rightWidth: ctx.measureText(right).width, vsWidth: 12, total: maxWidth, vsSize: 8 };
+  }
+
+  const start = x - metrics.total / 2;
+  const gap = current * 0.11;
+  let cursor = start;
+  ctx.fillStyle = "#f5f5f0";
+  ctx.textAlign = "left";
+  ctx.font = `900 ${current}px Impact, 'Arial Narrow', 'Arial Black', sans-serif`;
+  ctx.fillText(left, cursor, y);
+  cursor += metrics.leftWidth + gap;
+
+  ctx.font = `900 ${metrics.vsSize}px Impact, 'Arial Narrow', 'Arial Black', sans-serif`;
+  const vsY = y - current * 0.1;
+  ctx.fillText("VS", cursor, vsY);
+  ctx.strokeStyle = "#f5f5f0";
+  ctx.lineWidth = Math.max(1, current * 0.08);
+  ctx.beginPath();
+  ctx.moveTo(cursor, vsY + 3);
+  ctx.lineTo(cursor + metrics.vsWidth, vsY + 3);
+  ctx.stroke();
+  cursor += metrics.vsWidth + gap;
+
+  ctx.font = `900 ${current}px Impact, 'Arial Narrow', 'Arial Black', sans-serif`;
+  ctx.fillText(right, cursor, y);
+}
+
 function getInitials(name) {
   return name.split(/\s+/).map((part) => part[0]).join("").slice(0, 3).toUpperCase();
 }
@@ -341,13 +390,19 @@ function sectionMeta(section) {
 
 function drawLogo(eventNumber) {
   ctx.fillStyle = "#050505";
-  ctx.fillRect(338, 14, 224, 104);
+  ctx.fillRect(338, 0, 224, 118);
   ctx.fillStyle = "#f4d33f";
-  ctx.font = "900 46px Impact, Arial Black, sans-serif";
+  ctx.font = "italic 900 48px Impact, Arial Black, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("UFC", 416, 82);
-  ctx.font = "900 26px Impact, Arial Black, sans-serif";
-  ctx.fillText(eventNumber || "000", 498, 82);
+  ctx.fillText("UFC", 418, 76);
+  ctx.font = "italic 900 26px Impact, Arial Black, sans-serif";
+  ctx.fillText(eventNumber || "000", 496, 76);
+  ctx.strokeStyle = "#f4d33f";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(470, 86);
+  ctx.lineTo(522, 86);
+  ctx.stroke();
   ctx.textAlign = "left";
 }
 
@@ -356,8 +411,7 @@ async function drawFightPair(fight, x, y, width, headHeight, nameSize = 26, bout
   const headW = (width - gap) / 2;
   await drawFighterHeadshot(fight.a, x, y, headW, headHeight);
   await drawFighterHeadshot(fight.b, x + headW + gap, y, headW, headHeight);
-  const names = `${lastName(fight.a.name)} vs ${lastName(fight.b.name)}`.toUpperCase();
-  drawCondensedText(names, x + width / 2, y + headHeight + nameSize + 1, width + 12, nameSize, "#fff");
+  drawFightTitle(fight, x + width / 2, y + headHeight + nameSize + 1, width + 12, nameSize);
   drawCenteredText(getBoutLabel(fight.type, fight.weightClass).toUpperCase(), x + width / 2, y + headHeight + nameSize + boutSize + 5, width + 16, boutSize, "#f4d33f", "Arial Narrow, Arial, sans-serif");
 }
 
@@ -370,8 +424,7 @@ async function drawSmallFight(fight, x, y, width, headHeight = 78, nameSize = 18
   const headW = (width - gap) / 2;
   await drawFighterHeadshot(fight.a, x, y, headW, headHeight);
   await drawFighterHeadshot(fight.b, x + headW + gap, y, headW, headHeight);
-  const names = `${lastName(fight.a.name)} vs ${lastName(fight.b.name)}`.toUpperCase();
-  drawCondensedText(names, x + width / 2, y + headHeight + nameSize + 3, width + 10, nameSize, "#fff");
+  drawFightTitle(fight, x + width / 2, y + headHeight + nameSize + 3, width + 10, nameSize);
   drawCenteredText(fight.weightClass.toUpperCase(), x + width / 2, y + headHeight + nameSize + 18, width, 9, "#f4d33f", "Arial Narrow, Arial, sans-serif");
 }
 
@@ -392,29 +445,6 @@ function drawEmptySlot(x, y, width, headHeight = 78, nameSize = 18) {
   ctx.globalAlpha = 0.42;
   drawCondensedText("TBA vs TBA", x + width / 2, y + headHeight + nameSize + 3, width, nameSize, "#fff");
   drawCenteredText("BOUT TBA", x + width / 2, y + headHeight + nameSize + 18, width, 9, "#f4d33f", "Arial Narrow, Arial, sans-serif");
-  ctx.restore();
-}
-
-function drawSponsorBlock(x, y, width, height) {
-  ctx.save();
-  ctx.fillStyle = "rgba(0,0,0,0.18)";
-  ctx.fillRect(x, y, width, height);
-  ctx.strokeStyle = "rgba(255,255,255,0.14)";
-  ctx.strokeRect(x, y, width, height);
-  ctx.fillStyle = "#f5f5f0";
-  ctx.font = "900 10px Arial, sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText("PRESENTED BY", x + width / 2, y + 18);
-  ctx.strokeStyle = "#f5f5f0";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(x + width * 0.36, y + height * 0.55, 34, 0, Math.PI * 2);
-  ctx.stroke();
-  drawCondensedText("JAKUB", x + width * 0.36, y + height * 0.58, 62, 18, "#f5f5f0");
-  drawCondensedText("2 shots", x + width * 0.7, y + height * 0.52, 90, 23, "#ff3f51");
-  ctx.font = "900 10px Arial, sans-serif";
-  ctx.fillStyle = "#f5f5f0";
-  ctx.fillText("IN EVERY CAN", x + width * 0.7, y + height * 0.66);
   ctx.restore();
 }
 
@@ -477,39 +507,38 @@ async function renderPoster() {
   ctx.fillText("jakublabs.xyz", 450, 154);
   drawCondensedText("MAIN CARD", 450, 192, 250, 30, "#fff");
 
-  if (mainEvent) await drawFightPair(mainEvent, 32, 54, 284, 100, 24, 9);
-  if (coMain) await drawFightPair(coMain, 584, 54, 284, 100, 24, 9);
+  if (mainEvent) await drawFightPair(mainEvent, 32, 54, 284, 138, 24, 9);
+  if (coMain) await drawFightPair(coMain, 584, 54, 284, 138, 24, 9);
 
-  let y = 246;
-  const mainGrid = mainCard.slice(0, 3);
+  let y = 294;
+  const mainGrid = mainCard.slice(0, 4);
   const mainCardW = 190;
-  for (let index = 0; index < 3; index += 1) {
-    await drawSmallFight(mainGrid[index], 32 + index * 198, y, mainCardW, 76, 16);
+  for (let index = 0; index < 4; index += 1) {
+    await drawSmallFight(mainGrid[index], 34 + index * 216, y, mainCardW, 104, 16);
   }
-  drawSponsorBlock(650, y - 4, 212, 116);
-  y += 132;
+  y += 156;
 
   const prelimMeta = sectionMeta("prelims");
   drawSectionBar(prelimMeta.time, y, prelimMeta.platform);
   y += 52;
   const cardW = 192;
   for (let index = 0; index < 4; index += 1) {
-    await drawSmallFight(prelims[index], 34 + index * 216, y, cardW, 88, 16);
+    await drawSmallFight(prelims[index], 34 + index * 216, y, cardW, 104, 16);
   }
-  y += 144;
+  y += 158;
 
   const earlyMeta = sectionMeta("earlyPrelims");
   drawSectionBar(earlyMeta.time, y, earlyMeta.platform);
   y += 52;
   for (let index = 0; index < 4; index += 1) {
-    await drawSmallFight(earlyPrelims[index], 34 + index * 216, y, cardW, 88, 16);
+    await drawSmallFight(earlyPrelims[index], 34 + index * 216, y, cardW, 104, 16);
   }
 
   ctx.fillStyle = "#050505";
-  ctx.fillRect(28, 920, canvas.width - 56, 58);
+  ctx.fillRect(28, 928, canvas.width - 56, 58);
   ctx.strokeStyle = "#f4d33f";
-  ctx.strokeRect(28, 920, canvas.width - 56, 58);
-  drawCondensedText(eventDateInput.value.trim().toUpperCase() || "DATE TBA", canvas.width / 2, 962, canvas.width - 80, 50, "#f4d33f");
+  ctx.strokeRect(28, 928, canvas.width - 56, 58);
+  drawCondensedText(eventDateInput.value.trim().toUpperCase() || "DATE TBA", canvas.width / 2, 970, canvas.width - 80, 50, "#f4d33f");
 
   ctx.fillStyle = "rgba(255,255,255,0.72)";
   ctx.font = "900 14px Arial, sans-serif";
