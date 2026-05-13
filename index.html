@@ -73,6 +73,22 @@
               </label>
             </div>
 
+            <div class="division-controls" id="division-controls" hidden>
+              <label>
+                <span>division</span>
+                <select id="division-mode">
+                  <option value="catchweight">Catchweight</option>
+                  <option value="fighterA">Fighter 1 division</option>
+                  <option value="fighterB">Fighter 2 division</option>
+                  <option value="custom">Custom division</option>
+                </select>
+              </label>
+              <label id="custom-division-wrap" hidden>
+                <span>custom division</span>
+                <input id="custom-division" type="text" placeholder="Light Heavyweight" maxlength="40" />
+              </label>
+            </div>
+
             <p class="status" id="weight-preview">Select two fighters to auto-detect the weight class.</p>
             <button class="button button-light" id="add-fight" type="button">Add Fight</button>
           </div>
@@ -105,6 +121,6 @@
       </section>
     </main>
 
-    <script src="script.js?v=3"></script>
+    <script src="script.js?v=4"></script>
   </body>
 </html>
