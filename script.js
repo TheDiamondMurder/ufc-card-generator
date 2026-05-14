@@ -236,6 +236,32 @@ function drawCenteredText(text, x, y, maxWidth, size, color = "#fff", family = "
   ctx.textAlign = "left";
 }
 
+function drawBoundedCaption(text, x, y, maxWidth, size, color = "#f4d33f") {
+  const family = "'Arial Narrow', Arial, sans-serif";
+  const value = String(text || "").toUpperCase();
+  const fitted = fitText(value, maxWidth, size, 6, family);
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x - maxWidth / 2, y - fitted, maxWidth, fitted + 8);
+  ctx.clip();
+  ctx.fillStyle = color;
+  ctx.font = `900 ${fitted}px ${family}`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "alphabetic";
+
+  const measured = Math.max(1, ctx.measureText(value).width);
+  if (measured > maxWidth) {
+    const scale = maxWidth / measured;
+    ctx.translate(x, y);
+    ctx.scale(scale, 1);
+    ctx.fillText(value, 0, 0);
+  } else {
+    ctx.fillText(value, x, y);
+  }
+  ctx.restore();
+}
+
 function drawCondensedText(text, x, y, maxWidth, size, color = "#fff", align = "center") {
   drawCenteredText(text, x, y, maxWidth, size, color, "'Arial Narrow', Arial, sans-serif");
 }
@@ -433,8 +459,8 @@ async function drawFightPair(fight, x, y, width, headHeight, nameSize = 26, bout
   const headW = (width - gap) / 2;
   await drawFighterHeadshot(fight.a, x, y, headW, headHeight);
   await drawFighterHeadshot(fight.b, x + headW + gap, y, headW, headHeight);
-  drawFightTitle(fight, x + width / 2, y + headHeight + nameSize + 1, width + 12, nameSize);
-  drawCenteredText(getBoutLabel(fight.type, fight.weightClass).toUpperCase(), x + width / 2, y + headHeight + nameSize + boutSize + 5, width + 16, boutSize, "#f4d33f", "Arial Narrow, Arial, sans-serif");
+  drawFightTitle(fight, x + width / 2, y + headHeight + nameSize + 1, width, nameSize);
+  drawBoundedCaption(getBoutLabel(fight.type, fight.weightClass), x + width / 2, y + headHeight + nameSize + boutSize + 5, width, boutSize);
 }
 
 async function drawSmallFight(fight, x, y, width, headHeight = 78, nameSize = 18) {
@@ -446,11 +472,11 @@ async function drawSmallFight(fight, x, y, width, headHeight = 78, nameSize = 18
   const headW = (width - gap) / 2;
   await drawFighterHeadshot(fight.a, x, y, headW, headHeight);
   await drawFighterHeadshot(fight.b, x + headW + gap, y, headW, headHeight);
-  drawFightTitle(fight, x + width / 2, y + headHeight + nameSize + 3, width + 10, nameSize);
+  drawFightTitle(fight, x + width / 2, y + headHeight + nameSize + 3, width, nameSize);
   const label = fight.type === "title" || fight.type === "interim"
     ? getBoutLabel(fight.type, fight.weightClass)
     : fight.weightClass;
-  drawCenteredText(label.toUpperCase(), x + width / 2, y + headHeight + nameSize + 18, width, 9, "#f4d33f", "Arial Narrow, Arial, sans-serif");
+  drawBoundedCaption(label, x + width / 2, y + headHeight + nameSize + 18, width - 4, 9);
 }
 
 function drawEmptySlot(x, y, width, headHeight = 78, nameSize = 18, label = "TBA") {
